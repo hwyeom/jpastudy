@@ -1,7 +1,7 @@
 package jpabook.jpashop.service;
 
 import jpabook.jpashop.domain.Member;
-import jpabook.jpashop.repository.MemberRepository;
+import jpabook.jpashop.repository.MemberRepositoryOld;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,27 +15,27 @@ class MemberServiceTest {
 
     @Autowired MemberService memberService;
     @Autowired
-    MemberRepository memberRepository;
+    MemberRepositoryOld memberRepositoryOld;
 
     @Test
     public void 회원가입() throws Exception{
         //given
         Member member = new Member();
-        member.setUsername("kim");
+        member.setName("kim");
         //when
         Long savedId = memberService.join(member);
 
         //then
-        assertEquals(member, memberRepository.findOne(savedId));
+        assertEquals(member, memberRepositoryOld.findOne(savedId));
     }
 
     @Test
     public void 중복회원예외() throws Exception{
         //given
         Member member1 = new Member();
-        member1.setUsername("kim");
+        member1.setName("kim");
         Member member2 = new Member();
-        member2.setUsername("kim");
+        member2.setName("kim");
 
         //when
         memberService.join(member1);

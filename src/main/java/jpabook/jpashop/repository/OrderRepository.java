@@ -1,6 +1,11 @@
 package jpabook.jpashop.repository;
 
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import jpabook.jpashop.domain.Order;
+import jpabook.jpashop.domain.OrderStatus;
+import jpabook.jpashop.domain.QMember;
+import jpabook.jpashop.domain.QOrder;
 import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -23,12 +28,12 @@ public class OrderRepository {
         return em.find(Order.class, id);
     }
 
-    public List<Order> findAll(OrderSearch orderSearch){
+    public List<Order> findAllOld(OrderSearch orderSearch){
         String jpql = "select o from Order o join o.member m where 1=1";
         if(orderSearch.getOrderStatus() != null)
             jpql += " and o.status = :status ";
         if(StringUtils.hasText(orderSearch.getMemberName()))
-            jpql += " and m.username like :name ";
+            jpql += " and m.name like :name ";
 
         TypedQuery<Order> query = em.createQuery(jpql, Order.class);
         if(orderSearch.getOrderStatus() != null)
@@ -39,6 +44,33 @@ public class OrderRepository {
         return query
                 .setMaxResults(1000)
                 .getResultList();
+    }
+
+    public List<Order> findAll(OrderSearch orderSearch){
+        JPAQueryFactory qeury = new JPAQueryFactory(em);
+
+        QOrder order = QOrder.order;
+        QMember member = QMember.member;
+
+        return qeury.select(order)
+                .from(order)
+                .join(order.member, member)
+                .where(statusEq(orderSearch.getOrderStatus()), nameLike(orderSearch.getMemberName()))
+                .limit(1000)
+                .fetch();
+    }
+
+    private BooleanExpression nameLike(String name){
+        if (!StringUtils.hasText(name))
+            return null;
+        return QMember.member.name.like(name);
+    }
+
+    private BooleanExpression statusEq(OrderStatus status){
+        if(status == null){
+            return null;
+        }
+        return QOrder.order.status.eq(status);
     }
 
     // fetch join

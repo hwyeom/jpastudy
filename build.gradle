@@ -1,7 +1,16 @@
+// springboot 2.6 이상에서는 5.0.0 버전을 사용
+buildscript {
+	ext {
+		queryDslVersion = "5.0.0"
+	}
+}
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '2.7.0'
 	id 'io.spring.dependency-management' version '1.1.4'
+	//querydsl
+	id "com.ewerk.gradle.plugins.querydsl" version "1.0.10"
 }
 
 group = 'jpabook'
@@ -10,6 +19,8 @@ version = '0.0.1-SNAPSHOT'
 java {
 	sourceCompatibility = '1.8'
 }
+//query dsl 1
+ext["hibernate.version"] = "5.6.5.Final"
 
 configurations {
 	compileOnly {
@@ -37,8 +48,48 @@ dependencies {
 	// JPA fetch = LAZY 설정 시 Proxy 객체 Json 오류 발생 해결방법 Hivernate5 모듈로 해결
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate5'
 
+	//queryDSL 의존성 추가
+	implementation "com.querydsl:querydsl-jpa:${queryDslVersion}"
+	implementation "com.querydsl:querydsl-apt:${queryDslVersion}"
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+//--------------------queryDSL 관련 추가----------------------------
+def querydslDir = "$buildDir/generated/querydsl"
+querydsl {
+	jpa = true
+	querydslSourcesDir = querydslDir
+}
+sourceSets {
+	main.java.srcDir querydslDir
+}
+configurations {
+	querydsl.extendsFrom compileClasspath
+}
+compileQuerydsl {
+	options.annotationProcessorPath = configurations.querydsl
+}
+//Querydsl 추가, 자동 생성된 Q클래스 gradle clean으로 제거
+clean {
+	delete file('src/main/generated')
+}
+
+//
+//sourceSets {
+//	main {
+//		java {
+//			srcDirs = ['src/main/java', querydslDir]
+//		}
+//	}
+//}
+//
+//compileQuerydsl {
+//	options.annotationProcessorPath = configurations.querydsl
+//}
+//
+//configurations {
+//	querydsl.extendsFrom complieClasspath
+//}
