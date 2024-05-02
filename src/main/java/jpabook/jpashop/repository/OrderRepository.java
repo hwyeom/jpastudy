@@ -15,10 +15,19 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import java.util.List;
 
+import static jpabook.jpashop.domain.QMember.member;
+import static jpabook.jpashop.domain.QOrder.order;
+
 @Repository
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class OrderRepository {
     private final EntityManager em;
+    private final JPAQueryFactory query;
+
+    public OrderRepository(EntityManager em) {
+        this.em = em;
+        this.query = new JPAQueryFactory(em);
+    }
 
     public void save(Order order){
         em.persist(order);
@@ -28,31 +37,29 @@ public class OrderRepository {
         return em.find(Order.class, id);
     }
 
-    public List<Order> findAllOld(OrderSearch orderSearch){
-        String jpql = "select o from Order o join o.member m where 1=1";
-        if(orderSearch.getOrderStatus() != null)
-            jpql += " and o.status = :status ";
-        if(StringUtils.hasText(orderSearch.getMemberName()))
-            jpql += " and m.name like :name ";
-
-        TypedQuery<Order> query = em.createQuery(jpql, Order.class);
-        if(orderSearch.getOrderStatus() != null)
-            query.setParameter("status", orderSearch.getOrderStatus());
-        if(StringUtils.hasText(orderSearch.getMemberName()))
-            query.setParameter("name", orderSearch.getMemberName());
-
-        return query
-                .setMaxResults(1000)
-                .getResultList();
-    }
+//    public List<Order> findAll(OrderSearch orderSearch){
+//        String jpql = "select o from Order o join o.member m where 1=1";
+//        if(orderSearch.getOrderStatus() != null)
+//            jpql += " and o.status = :status ";
+//        if(StringUtils.hasText(orderSearch.getMemberName()))
+//            jpql += " and m.name like :name ";
+//
+//        TypedQuery<Order> query = em.createQuery(jpql, Order.class);
+//        if(orderSearch.getOrderStatus() != null)
+//            query.setParameter("status", orderSearch.getOrderStatus());
+//        if(StringUtils.hasText(orderSearch.getMemberName()))
+//            query.setParameter("name", orderSearch.getMemberName());
+//
+//        return query
+//                .setMaxResults(1000)
+//                .getResultList();
+//    }
 
     public List<Order> findAll(OrderSearch orderSearch){
-        JPAQueryFactory qeury = new JPAQueryFactory(em);
+//        QOrder order = QOrder.order;
+//        QMember member = QMember.member;
 
-        QOrder order = QOrder.order;
-        QMember member = QMember.member;
-
-        return qeury.select(order)
+        return query.select(order)
                 .from(order)
                 .join(order.member, member)
                 .where(statusEq(orderSearch.getOrderStatus()), nameLike(orderSearch.getMemberName()))
@@ -63,14 +70,14 @@ public class OrderRepository {
     private BooleanExpression nameLike(String name){
         if (!StringUtils.hasText(name))
             return null;
-        return QMember.member.name.like(name);
+        return member.name.like(name);
     }
 
     private BooleanExpression statusEq(OrderStatus status){
         if(status == null){
             return null;
         }
-        return QOrder.order.status.eq(status);
+        return order.status.eq(status);
     }
 
     // fetch join
